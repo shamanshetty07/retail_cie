@@ -148,32 +148,45 @@ router.put('/:storeId/products/:productId', auth, requireRole('store_owner'), as
       runValidators: true
     });
 
-    if (typeof updates.price === 'number' && updates.price <= product.price) {
+    if (typeof updates.price === 'number' && updates.price < product.price) {
       const Watchlist = require('../models/Watchlist');
       const watchlists = await Watchlist.find({
-        products: {
-          $elemMatch: {
-            product: req.params.productId,
-            targetPrice: { $gte: updates.price }
-          }
-        }
+        'products.product': req.params.productId
       }).populate('user', 'username email');
 
       const io = req.app.get('io');
       const userSockets = req.app.get('userSockets');
 
-      watchlists.forEach((watchlist) => {
-        const userId = watchlist.user._id.toString();
-        if (userSockets.has(userId)) {
-          io.to(userSockets.get(userId)).emit('priceDrop', {
-            product: updatedProduct,
+      for (const watchlist of watchlists) {
+        const item = watchlist.products.find(p => p.product.toString() === req.params.productId);
+        if (!item) continue;
+
+        if (item.targetPrice == null || updates.price <= item.targetPrice) {
+          const alert = {
             productName: updatedProduct.name,
             newPrice: updates.price,
-            watchlist: watchlist.name,
-            storeName: store.name
+            storeName: store.name,
+            createdAt: new Date()
+          };
+
+          // Use $push directly to avoid save() issues with older documents
+          await Watchlist.findByIdAndUpdate(watchlist._id, {
+            $push: { recentAlerts: alert }
           });
+
+          const userId = watchlist.user._id.toString();
+          if (userSockets.has(userId)) {
+            io.to(userSockets.get(userId)).emit('priceDrop', {
+              id: Date.now(),
+              product: updatedProduct,
+              productName: updatedProduct.name,
+              newPrice: updates.price,
+              watchlist: watchlist.name,
+              storeName: store.name
+            });
+          }
         }
-      });
+      }
     }
 
     res.json({ message: 'Product updated successfully', product: updatedProduct });

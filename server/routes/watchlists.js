@@ -14,7 +14,7 @@ router.get('/', auth, async (req, res) => {
       isActive: true 
     })
     .populate('products.product', 'name brand category images')
-    .select('name description products notifications createdAt updatedAt');
+    .select('name description products notifications recentAlerts createdAt updatedAt');
 
     res.json({ watchlists });
   } catch (error) {

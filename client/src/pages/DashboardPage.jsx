@@ -23,7 +23,8 @@ function DashboardPage({ user }) {
   const [productData, setProductData] = useState({
     name: '',
     price: '',
-    category: 'other'
+    category: 'other',
+    imageUrl: ''
   })
   const [updatingProductId, setUpdatingProductId] = useState(null)
 
@@ -142,7 +143,7 @@ function DashboardPage({ user }) {
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       )
       setShowProductForm(false)
-      setProductData({ name: '', price: '', category: 'other' })
+      setProductData({ name: '', price: '', category: 'other', imageUrl: '' })
       fetchStoreProducts(selectedStore._id)
     } catch (error) {
       setError(getApiError(error, 'Failed to create product'))
@@ -332,6 +333,12 @@ function DashboardPage({ user }) {
                   <option value="household">Household</option>
                   <option value="other">Other</option>
                 </select>
+                <input
+                  type="url"
+                  placeholder="Image URL (optional)"
+                  value={productData.imageUrl}
+                  onChange={(e) => setProductData({ ...productData, imageUrl: e.target.value })}
+                />
               </div>
               <div className="inline-form-actions">
                 <button type="submit">Create product</button>
@@ -348,7 +355,7 @@ function DashboardPage({ user }) {
                 <article key={product._id} className="product-item seller-product-item">
                   <div className="seller-product-info">
                     <img
-                      src={product.images?.[0]?.url || 'https://placehold.co/96x96/e5e7eb/475569?text=Item'}
+                      src={product.images?.[0]?.url || 'https://placehold.co/96x96/1e293b/94a3b8?text=Item'}
                       alt={product.images?.[0]?.alt || product.name}
                       className="product-thumb"
                     />

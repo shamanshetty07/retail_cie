@@ -5,27 +5,27 @@
 }
 
 :root {
-  --bg: #f5f7fb;
+  --bg: #f8fafc;
   --bg-elevated: #ffffff;
-  --surface: rgba(255, 255, 255, 0.9);
+  --surface: rgba(255, 255, 255, 0.75);
   --surface-strong: #ffffff;
-  --surface-muted: #eef2f7;
+  --surface-muted: #f1f5f9;
   --surface-dark: #0f172a;
-  --surface-dark-soft: #162133;
-  --text: #172033;
+  --surface-dark-soft: #1e293b;
+  --text: #0f172a;
   --text-muted: #64748b;
   --text-inverse: #ffffff;
-  --border: rgba(148, 163, 184, 0.24);
-  --primary: #ff6b35;
-  --primary-hover: #f15624;
-  --secondary: #1d4ed8;
-  --secondary-soft: rgba(29, 78, 216, 0.1);
-  --success: #0f9f6e;
-  --danger: #dc2626;
-  --warning-bg: #fff4e6;
-  --warning-text: #9a4d03;
-  --shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
-  --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.06);
+  --border: rgba(148, 163, 184, 0.2);
+  --primary: #f97316;
+  --primary-hover: #ea580c;
+  --secondary: #3b82f6;
+  --secondary-soft: rgba(59, 130, 246, 0.1);
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning-bg: #fef3c7;
+  --warning-text: #b45309;
+  --shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+  --shadow-soft: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
   --radius-xl: 32px;
   --radius-lg: 24px;
   --radius-md: 18px;
@@ -33,27 +33,27 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #09111f;
-  --bg-elevated: #0d1728;
-  --surface: rgba(13, 23, 40, 0.92);
-  --surface-strong: #101b31;
-  --surface-muted: #13203a;
-  --surface-dark: #08101d;
-  --surface-dark-soft: #0d1627;
-  --text: #ecf2ff;
-  --text-muted: #c6d1e4;
+  --bg: #0b0f19;
+  --bg-elevated: #111827;
+  --surface: rgba(17, 24, 39, 0.7);
+  --surface-strong: #111827;
+  --surface-muted: #1f2937;
+  --surface-dark: #030712;
+  --surface-dark-soft: #0b0f19;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
   --text-inverse: #ffffff;
-  --border: rgba(148, 163, 184, 0.2);
-  --primary: #ff7b4a;
-  --primary-hover: #ff925f;
+  --border: rgba(148, 163, 184, 0.1);
+  --primary: #f97316;
+  --primary-hover: #fb923c;
   --secondary: #60a5fa;
-  --secondary-soft: rgba(96, 165, 250, 0.14);
+  --secondary-soft: rgba(96, 165, 250, 0.15);
   --success: #34d399;
   --danger: #f87171;
-  --warning-bg: rgba(120, 53, 15, 0.36);
-  --warning-text: #facc15;
-  --shadow: 0 24px 56px rgba(2, 6, 23, 0.5);
-  --shadow-soft: 0 16px 32px rgba(2, 6, 23, 0.28);
+  --warning-bg: rgba(180, 83, 9, 0.3);
+  --warning-text: #fcd34d;
+  --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
 html,
@@ -63,13 +63,14 @@ body,
 }
 
 body {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(255, 107, 53, 0.1), transparent 26%),
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 24%),
-    var(--bg);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
   color: var(--text);
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+h1, h2, h3, h4, .brand-badge, .price, .section-kicker, .hero-stat-card strong, .metric-card strong, .location-pill strong {
+  font-family: 'Outfit', system-ui, sans-serif;
 }
 
 #root {
@@ -95,59 +96,40 @@ a {
   min-height: 100vh;
   position: relative;
   isolation: isolate;
+  overflow: clip;
+}
+
+.app-shell::before,
+.app-shell::after {
+  content: '';
+  position: absolute;
+  inset: -200px;
+  z-index: -2;
+  filter: blur(120px);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: bgSpin 25s linear infinite;
 }
 
 .app-shell::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  opacity: 0.35;
-  transform: scale(1.02);
+  background: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 40%),
+              radial-gradient(circle at 80% 60%, color-mix(in srgb, var(--secondary) 15%, transparent), transparent 40%);
 }
 
 .app-shell::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
+  background: radial-gradient(circle at 20% 80%, color-mix(in srgb, var(--primary) 15%, transparent), transparent 30%);
+  animation: bgSpin 35s linear infinite reverse;
 }
 
-.customer-mode::before {
-  background-image: none;
+@keyframes bgSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.customer-mode::after {
-  background:
-    linear-gradient(180deg, rgba(255, 247, 240, 0.82), rgba(245, 247, 251, 0.94)),
-    radial-gradient(circle at top left, rgba(255, 107, 53, 0.14), transparent 28%),
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 24%);
-}
-
-.seller-mode::before {
-  background-image: none;
-}
-
-.seller-mode::after {
-  background:
-    linear-gradient(180deg, rgba(8, 16, 29, 0.8), rgba(9, 17, 31, 0.94)),
-    radial-gradient(circle at top left, rgba(96, 165, 250, 0.12), transparent 26%),
-    radial-gradient(circle at top right, rgba(255, 123, 74, 0.12), transparent 22%);
-}
-
-:root[data-theme='dark'] .customer-mode::after {
-  background:
-    linear-gradient(180deg, rgba(7, 14, 25, 0.72), rgba(9, 17, 31, 0.9)),
-    radial-gradient(circle at top left, rgba(255, 123, 74, 0.12), transparent 28%),
-    radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 24%);
-}
-
-:root[data-theme='dark'] .app-shell::before {
-  opacity: 0.22;
+:root[data-theme='dark'] .app-shell::before,
+:root[data-theme='dark'] .app-shell::after {
+  opacity: 0.9;
+  filter: blur(160px);
 }
 
 .page-shell {
@@ -251,7 +233,7 @@ h4 {
   border: 0;
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
 }
 
 .cta-link,
@@ -281,8 +263,10 @@ h4 {
 button:hover,
 .cta-link:hover,
 .ghost-link:hover,
-.nav-links a:hover {
-  transform: translateY(-1px);
+.nav-links a:hover,
+.category-chip:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 28px -6px color-mix(in srgb, var(--primary) 40%, transparent);
 }
 
 .user-pill {
@@ -326,6 +310,22 @@ button:hover,
 .seller-main {
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+}
+
+.card-gradient:hover,
+.card-surface:hover,
+.auth-card:hover,
+.product-card:hover,
+.summary-card:hover,
+.metric-card:hover,
+.results-map-panel:hover,
+.results-list-panel:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-soft), 0 30px 60px -15px color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
 }
 
 .card-gradient {
@@ -347,6 +347,8 @@ button:hover,
   background: rgba(255, 255, 255, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .customer-hero,
@@ -373,8 +375,9 @@ button:hover,
 .seller-header p,
 .auth-aside p,
 .results-header p,
-.auth-subtitle {
-  color: color-mix(in srgb, currentColor 86%, transparent);
+.auth-subtitle,
+.metric-card p {
+  color: var(--text-muted);
   max-width: 62ch;
 }
 
@@ -449,6 +452,7 @@ button:hover,
   border-radius: 18px;
   padding: 15px 16px;
   outline: none;
+  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, transform 0.3s ease;
 }
 
 .search-input {
@@ -461,8 +465,9 @@ button:hover,
 .form select:focus,
 .form-group input:focus,
 .form-group select:focus {
-  border-color: color-mix(in srgb, var(--primary) 60%, white);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 70%, white);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 22%, transparent), 0 10px 20px -5px color-mix(in srgb, var(--primary) 10%, transparent);
+  transform: translateY(-1px);
 }
 
 .hero-search-btn {
@@ -956,54 +961,64 @@ button:hover,
 }
 
 .card-surface-dark h2,
-.card-surface-dark h3,
-.card-surface-dark h4,
-.card-surface-dark strong,
-.card-surface-dark .store-name,
 .card-surface-dark .panel-header,
 .card-surface-dark .seller-main-header {
-  color: #f8fbff;
+  color: #ffffff;
 }
 
-.card-surface-dark p,
-.card-surface-dark span,
 .card-surface-dark .section-kicker,
 .card-surface-dark .coordinates-preview,
 .card-surface-dark .map-help,
-.card-surface-dark .seller-empty,
-.card-surface-dark .product-item p,
-.card-surface-dark .store-category-pill {
-  color: #cdd9ee;
+.card-surface-dark .seller-empty {
+  color: #cbd5e1;
   opacity: 1;
 }
 
-.card-surface-dark .price {
-  color: #6ee7b7;
-}
-
-.card-surface-dark .price-adjust-btn,
-.card-surface-dark .seller-form input,
-.card-surface-dark .seller-form select,
+/* Card Items Inside Dark Surface */
 .card-surface-dark .seller-store-item,
 .card-surface-dark .seller-product-item {
-  color: #f8fbff;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-.seller-form {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 20px;
-  padding: 16px;
-  margin: 18px 0;
+.card-surface-dark .seller-store-item.active {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.seller-form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+.card-surface-dark .seller-store-item h3,
+.card-surface-dark .seller-product-item h4,
+.card-surface-dark .store-name {
+  color: #ffffff;
 }
 
-.seller-form-grid.three-col {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.card-surface-dark .seller-store-item p,
+.card-surface-dark .seller-product-item p {
+  color: #94a3b8;
+}
+
+.card-surface-dark .product-price-block strong {
+  color: #34d399;
+}
+
+.card-surface-dark .price-adjust-btn {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.card-surface-dark .price-adjust-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Form Styles Inside Dark Surface */
+.card-surface-dark .seller-form input,
+.card-surface-dark .seller-form select {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .leaflet-map {

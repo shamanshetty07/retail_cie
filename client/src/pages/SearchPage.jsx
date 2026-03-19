@@ -12,11 +12,29 @@ const discoveryCategories = [
   { label: 'Beverages', query: 'juice' }
 ]
 
+const SEARCH_CACHE_KEY = 'retailtech_search_cache'
+
+function loadSearchCache() {
+  try {
+    const raw = sessionStorage.getItem(SEARCH_CACHE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveSearchCache(data) {
+  try {
+    sessionStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(data))
+  } catch {}
+}
+
 function SearchPage({ user }) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [products, setProducts] = useState([])
+  const cache = loadSearchCache()
+  const [searchQuery, setSearchQuery] = useState(cache?.searchQuery ?? '')
+  const [products, setProducts] = useState(cache?.products ?? [])
   const [loading, setLoading] = useState(false)
-  const [radius, setRadius] = useState(10)
+  const [radius, setRadius] = useState(cache?.radius ?? 10)
   const [userLocation, setUserLocation] = useState({ lat: null, lng: null })
   const [useLocation, setUseLocation] = useState(true)
   const [highlightedStoreKey, setHighlightedStoreKey] = useState(null)
@@ -99,8 +117,10 @@ function SearchPage({ user }) {
       }
 
       const response = await axios.get(`${API_BASE_URL}/products/search`, { params })
-      setProducts(response.data.products || [])
+      const fetchedProducts = response.data.products || []
+      setProducts(fetchedProducts)
       setOpenReviewsFor(null)
+      saveSearchCache({ searchQuery, radius, products: fetchedProducts })
     } catch (error) {
       console.error('Search error:', error)
       alert('Search failed. Please try again.')

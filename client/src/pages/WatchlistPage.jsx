@@ -33,7 +33,24 @@ function WatchlistPage() {
       const response = await axios.get(`${API_BASE_URL}/watchlist`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
-      setWatchlists(response.data.watchlists || [])
+      const watchlistsData = response.data.watchlists || []
+      setWatchlists(watchlistsData)
+
+      const alerts = watchlistsData.flatMap(wl => (wl.recentAlerts || []).map(a => ({
+        id: a._id || Date.now() + Math.random(),
+        productName: a.productName,
+        newPrice: a.newPrice,
+        storeName: a.storeName,
+        createdAt: new Date(a.createdAt)
+      })))
+      
+      alerts.sort((a,b) => b.createdAt - a.createdAt)
+      
+      setNotifications(prev => {
+        const merged = [...alerts, ...prev]
+        // Remove duplicates by id
+        return Array.from(new Map(merged.map(item => [item.id, item])).values())
+      })
     } catch (error) {
       console.error('Failed to fetch watchlist:', error)
     } finally {
@@ -106,7 +123,7 @@ function WatchlistPage() {
         </div>
         <div className="watchlist-stat-row">
           <div className="summary-card">
-            <span>Watched items</span>
+            <span>viewed items</span>
             <strong>{watchlistItems.length}</strong>
             <p>Saved products</p>
           </div>

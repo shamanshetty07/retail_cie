@@ -42,6 +42,15 @@ const watchlistSchema = new mongoose.Schema({
       default: true
     }
   },
+  recentAlerts: [{
+    productName: String,
+    newPrice: Number,
+    storeName: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now
