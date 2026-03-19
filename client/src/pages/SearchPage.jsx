@@ -27,7 +27,9 @@ function loadSearchCache() {
 function saveSearchCache(data) {
   try {
     sessionStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(data))
-  } catch {}
+  } catch (err) {
+    console.error('Failed to save search cache:', err)
+  }
 }
 
 function SearchPage({ user }) {
@@ -46,7 +48,6 @@ function SearchPage({ user }) {
   const [reviewDrafts, setReviewDrafts] = useState({})
   const [loadingReviewsFor, setLoadingReviewsFor] = useState(null)
   const [submittingReviewFor, setSubmittingReviewFor] = useState(null)
-  const [targetPrices, setTargetPrices] = useState({})
   const [isDefaultView, setIsDefaultView] = useState(!cache?.searchQuery)
 
   const vantaRef = useRef(null)
@@ -78,7 +79,7 @@ function SearchPage({ user }) {
           cohesion: 30,
           quantity: 4
         })
-      } else if (!window.VANTA) {
+      } else if (!window.VANTA || !window.THREE) {
         setTimeout(tryInit, 100) // retry until scripts load
       }
     }
@@ -253,6 +254,7 @@ function SearchPage({ user }) {
         [productId]: response.data
       }))
     } catch (error) {
+      console.error(error)
       alert('Failed to load reviews.')
     } finally {
       setLoadingReviewsFor(null)
@@ -307,153 +309,153 @@ function SearchPage({ user }) {
     }
   }
 
-  if (!user) {
-    return (
-      <div
-        ref={vantaRef}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          width: '100vw',
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 0,
-          overflow: 'hidden'
-        }}
-      >
-        {/* Gradient overlay for readability */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse at center, rgba(13,13,26,0.45) 0%, rgba(13,13,26,0.75) 100%)',
-          zIndex: 1
-        }} />
-
-        {/* Centered content card */}
-        <div style={{
-          position: 'relative',
-          zIndex: 2,
-          textAlign: 'center',
-          padding: '3rem 2.5rem',
-          borderRadius: '24px',
-          background: 'rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
-          maxWidth: '480px',
-          width: '90%',
-          animation: 'vantaFadeIn 0.8s ease forwards'
-        }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            background: 'rgba(108,99,255,0.2)',
-            border: '1px solid rgba(108,99,255,0.4)',
-            borderRadius: '100px',
-            padding: '0.35rem 1rem',
-            marginBottom: '1.5rem',
-            fontSize: '0.78rem',
-            fontWeight: 600,
-            color: '#a29dff',
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase'
-          }}>
-            <span>✦</span> Discover nearby deals
-          </div>
-
-          <h1 style={{
-            fontFamily: 'Outfit, sans-serif',
-            fontSize: 'clamp(1.8rem, 5vw, 2.6rem)',
-            fontWeight: 800,
-            color: '#fff',
-            lineHeight: 1.15,
-            marginBottom: '1rem',
-            letterSpacing: '-0.02em'
-          }}>
-            Find the best prices<br />
-            <span style={{
-              background: 'linear-gradient(135deg, #6c63ff, #00d4ff)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>near you</span>
-          </h1>
-
-          <p style={{
-            color: 'rgba(255,255,255,0.65)',
-            fontSize: '1rem',
-            lineHeight: 1.6,
-            marginBottom: '2rem'
-          }}>
-            Compare real‑time prices across local stores,
-            set price alerts, and head straight to the best deal.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
-            <button
-              onClick={() => navigate('/register')}
-              style={{
-                display: 'inline-block',
-                padding: '0.9rem 2.5rem',
-                borderRadius: '100px',
-                background: 'linear-gradient(135deg, #6c63ff 0%, #00d4ff 100%)',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '1.05rem',
-                fontFamily: 'Outfit, sans-serif',
-                border: 'none',
-                cursor: 'pointer',
-                letterSpacing: '0.01em',
-                boxShadow: '0 8px 28px rgba(108,99,255,0.45)',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                width: '100%',
-                maxWidth: '280px'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 12px 36px rgba(108,99,255,0.6)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 8px 28px rgba(108,99,255,0.45)'
-              }}
-            >
-              Get Started — Register
-            </button>
-
-            <button
-              onClick={() => navigate('/login')}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'rgba(255,255,255,0.55)',
-                fontSize: '0.9rem',
-                transition: 'color 0.2s ease'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.55)' }}
-            >
-              Already have an account? Log in →
-            </button>
-          </div>
-        </div>
-
-        <style>{`
-          @keyframes vantaFadeIn {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
-      </div>
-    )
-  }
-
   return (
-    <div className="search-page customer-home">
+    <div className={`search-page customer-home ${!user ? 'with-vanta-bg' : ''}`}>
+      {!user && (
+        <section
+          ref={vantaRef}
+          className="vanta-hero"
+          style={{
+            position: 'relative',
+            width: '100%',
+            minHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            marginBottom: '3rem'
+          }}
+        >
+          {/* Gradient overlay for readability */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at center, rgba(13,13,26,0.3) 0%, rgba(13,13,26,0.7) 100%)',
+            zIndex: 1
+          }} />
+
+          {/* Centered content card */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            textAlign: 'center',
+            padding: '4rem 2.5rem',
+            borderRadius: '32px',
+            background: 'rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(30px)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+            maxWidth: '520px',
+            width: '90%',
+            animation: 'vantaFadeIn 0.8s ease forwards'
+          }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'rgba(108,99,255,0.2)',
+              border: '1px solid rgba(108,99,255,0.4)',
+              borderRadius: '100px',
+              padding: '0.4rem 1.2rem',
+              marginBottom: '1.5rem',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              color: '#a29dff',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase'
+            }}>
+              <span>✦</span> Local retail, reinvented
+            </div>
+
+            <h1 style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: 'clamp(2rem, 6vw, 3rem)',
+              fontWeight: 800,
+              color: '#fff',
+              lineHeight: 1.1,
+              marginBottom: '1.25rem',
+              letterSpacing: '-0.03em'
+            }}>
+              Find the best prices<br />
+              <span style={{
+                background: 'linear-gradient(135deg, #6c63ff, #00d4ff)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>near you</span>
+            </h1>
+
+            <p style={{
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: '1.1rem',
+              lineHeight: 1.6,
+              marginBottom: '2.5rem',
+              fontWeight: 500
+            }}>
+              Compare real‑time prices across local stores,
+              set price alerts, and head straight to the best deal.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+              <button
+                onClick={() => navigate('/register')}
+                style={{
+                  display: 'inline-block',
+                  padding: '1rem 3rem',
+                  borderRadius: '100px',
+                  background: 'linear-gradient(135deg, #6c63ff 0%, #00d4ff 100%)',
+                  color: '#fff',
+                  fontWeight: 800,
+                  fontSize: '1.1rem',
+                  fontFamily: 'Outfit, sans-serif',
+                  border: 'none',
+                  cursor: 'pointer',
+                  letterSpacing: '0.01em',
+                  boxShadow: '0 12px 32px rgba(108,99,255,0.45)',
+                  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                  width: '100%',
+                  maxWidth: '300px'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'scale(1.04) translateY(-4px)'
+                  e.currentTarget.style.boxShadow = '0 16px 40px rgba(108,99,255,0.6)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'scale(1) translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 12px 32px rgba(108,99,255,0.45)'
+                }}
+              >
+                Get Started — Register
+              </button>
+
+              <button
+                onClick={() => navigate('/login')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  transition: 'color 0.2s ease',
+                  textDecoration: 'none'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#fff' }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+              >
+                Already have an account? Log in →
+              </button>
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes vantaFadeIn {
+              from { opacity: 0; transform: translateY(30px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+        </section>
+      )}
       <section className="customer-hero card-gradient">
         <div className="hero-copy">
           <span className="section-kicker">Delivery-style discovery, tuned for local retail</span>

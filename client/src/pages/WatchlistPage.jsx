@@ -71,6 +71,7 @@ function WatchlistPage() {
         }
       }).filter((watchlist) => (watchlist.products || []).length > 0))
     } catch (error) {
+      console.error(error)
       alert('Failed to remove item from watchlist')
     }
   }
@@ -97,6 +98,7 @@ function WatchlistPage() {
       setWatchlists((prev) => prev.map((item) => item._id === watchlistId ? response.data.watchlist : item))
       setEditingTarget((prev) => ({ ...prev, [`${watchlistId}-${productId}`]: String(targetPrice) }))
     } catch (error) {
+      console.error(error)
       alert('Failed to update target price')
     }
   }

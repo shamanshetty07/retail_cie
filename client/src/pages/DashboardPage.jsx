@@ -32,13 +32,13 @@ function DashboardPage({ user }) {
 
   useEffect(() => {
     fetchStores()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectedStore) {
       fetchStoreProducts(selectedStore._id)
     }
-  }, [selectedStore])
+  }, [selectedStore]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const getApiError = (error, fallback) => {
     const apiError = error.response?.data
@@ -489,8 +489,8 @@ function DashboardPage({ user }) {
                       >
                         + ₹1
                       </button>
+                      </div>
                     </div>
-                  </div>
                   </article>
                 )
               })

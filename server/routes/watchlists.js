@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Watchlist = require('../models/Watchlist');
-const StoreProduct = require('../models/StoreProduct');
+
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -228,7 +228,11 @@ router.get('/:id/alerts', auth, async (req, res) => {
     const watchlist = await Watchlist.findOne({ 
       _id: req.params.id, 
       user: req.user._id 
-    }).populate('products.product', 'name brand category');
+    }).populate({
+      path: 'products.product',
+      select: 'name brand category price store',
+      populate: { path: 'store', select: 'name' }
+    });
 
     if (!watchlist) {
       return res.status(404).json({ message: 'Watchlist not found' });
@@ -237,21 +241,14 @@ router.get('/:id/alerts', auth, async (req, res) => {
     const alerts = [];
 
     for (const item of watchlist.products) {
-      if (item.targetPrice) {
-        // Find current lowest price
-        const lowestPrice = await StoreProduct.findOne({ 
-          product: item.product._id,
-          isActive: true,
-          inStock: true 
-        }).sort({ price: 1 });
-
-        if (lowestPrice && lowestPrice.price <= item.targetPrice) {
+      if (item.targetPrice && item.product && item.product.price != null) {
+        if (item.product.price <= item.targetPrice) {
           alerts.push({
-            product: item.product,
+            product: item.product._id,
             targetPrice: item.targetPrice,
-            currentPrice: lowestPrice.price,
-            discount: ((item.targetPrice - lowestPrice.price) / item.targetPrice * 100).toFixed(2),
-            store: await require('../models/Store').findById(lowestPrice.store).select('name')
+            currentPrice: item.product.price,
+            discount: ((item.targetPrice - item.product.price) / item.targetPrice * 100).toFixed(2),
+            store: item.product.store
           });
         }
       }
