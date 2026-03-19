@@ -27,6 +27,8 @@ function DashboardPage({ user }) {
     imageUrl: ''
   })
   const [updatingProductId, setUpdatingProductId] = useState(null)
+  const [imageInputFor, setImageInputFor] = useState(null)   // productId with open image input
+  const [imageUrlDraft, setImageUrlDraft] = useState('')
 
   useEffect(() => {
     fetchStores()
@@ -170,6 +172,27 @@ function DashboardPage({ user }) {
       setProducts((prev) => prev.map((item) => (item._id === product._id ? response.data.product : item)))
     } catch (error) {
       setError(getApiError(error, 'Failed to update product price'))
+    } finally {
+      setUpdatingProductId(null)
+    }
+  }
+
+  const updateProductImage = async (product) => {
+    const url = imageUrlDraft.trim()
+    if (!url) return
+    try {
+      setError('')
+      setUpdatingProductId(product._id)
+      const response = await axios.put(
+        `${API_BASE_URL}/stores/${selectedStore._id}/products/${product._id}`,
+        { imageUrl: url },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      )
+      setProducts((prev) => prev.map((item) => (item._id === product._id ? response.data.product : item)))
+      setImageInputFor(null)
+      setImageUrlDraft('')
+    } catch (error) {
+      setError(getApiError(error, 'Failed to update product image'))
     } finally {
       setUpdatingProductId(null)
     }
@@ -351,19 +374,101 @@ function DashboardPage({ user }) {
             {products.length === 0 ? (
               <div className="seller-empty">No products in this store yet.</div>
             ) : (
-              products.map((product) => (
-                <article key={product._id} className="product-item seller-product-item">
-                  <div className="seller-product-info">
-                    <img
-                      src={product.images?.[0]?.url || 'https://placehold.co/96x96/1e293b/94a3b8?text=Item'}
-                      alt={product.images?.[0]?.alt || product.name}
-                      className="product-thumb"
-                    />
-                    <div>
-                      <h4>{product.name}</h4>
-                      <p>Category: {product.category}</p>
+              products.map((product) => {
+                const hasImage = !!product.images?.[0]?.url
+                const isImageOpen = imageInputFor === product._id
+                return (
+                  <article key={product._id} className="product-item seller-product-item">
+                    <div className="seller-product-info">
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <img
+                          src={hasImage ? product.images[0].url : 'https://placehold.co/96x96/1e293b/94a3b8?text=Item'}
+                          alt={product.images?.[0]?.alt || product.name}
+                          className="product-thumb"
+                          style={{ opacity: hasImage ? 1 : 0.45 }}
+                        />
+                        {!hasImage && !isImageOpen && (
+                          <button
+                            type="button"
+                            title="Add image"
+                            onClick={() => { setImageInputFor(product._id); setImageUrlDraft('') }}
+                            style={{
+                              position: 'absolute', inset: 0,
+                              width: '100%', height: '100%',
+                              background: 'rgba(0,0,0,0.55)',
+                              border: '2px dashed rgba(255,255,255,0.3)',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              display: 'flex', flexDirection: 'column',
+                              alignItems: 'center', justifyContent: 'center',
+                              gap: '2px', color: '#fff', fontSize: '0.6rem',
+                              fontWeight: 600, letterSpacing: '0.03em'
+                            }}
+                          >
+                            <span style={{ fontSize: '1.1rem' }}>📷</span>
+                            Add
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4>{product.name}</h4>
+                        <p>Category: {product.category}</p>
+                        {hasImage && !isImageOpen && (
+                          <button
+                            type="button"
+                            className="secondary-inline-btn"
+                            style={{ marginTop: '0.35rem', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}
+                            onClick={() => { setImageInputFor(product._id); setImageUrlDraft(product.images[0].url) }}
+                          >
+                            Change image
+                          </button>
+                        )}
+                        {isImageOpen && (
+                          <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <input
+                              type="url"
+                              placeholder="Paste image URL…"
+                              value={imageUrlDraft}
+                              onChange={(e) => setImageUrlDraft(e.target.value)}
+                              autoFocus
+                              style={{
+                                width: '100%', padding: '0.4rem 0.6rem',
+                                borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)',
+                                background: 'rgba(255,255,255,0.06)', color: 'inherit',
+                                fontSize: '0.8rem'
+                              }}
+                            />
+                            {imageUrlDraft && (
+                              <img
+                                src={imageUrlDraft}
+                                alt="preview"
+                                style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)' }}
+                                onError={(e) => { e.target.style.display = 'none' }}
+                              />
+                            )}
+                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                              <button
+                                type="button"
+                                className="btn"
+                                style={{ fontSize: '0.8rem', padding: '0.35rem 0.9rem' }}
+                                disabled={updatingProductId === product._id || !imageUrlDraft.trim()}
+                                onClick={() => updateProductImage(product)}
+                              >
+                                {updatingProductId === product._id ? 'Saving…' : 'Save'}
+                              </button>
+                              <button
+                                type="button"
+                                className="secondary-inline-btn"
+                                style={{ fontSize: '0.8rem', padding: '0.35rem 0.9rem' }}
+                                onClick={() => { setImageInputFor(null); setImageUrlDraft('') }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   <div className="product-price-block">
                     <strong>₹{Number(product.price).toFixed(2)}</strong>
                     <span>current price</span>
@@ -386,8 +491,9 @@ function DashboardPage({ user }) {
                       </button>
                     </div>
                   </div>
-                </article>
-              ))
+                  </article>
+                )
+              })
             )}
           </div>
         </section>

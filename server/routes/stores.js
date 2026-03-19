@@ -143,6 +143,11 @@ router.put('/:storeId/products/:productId', auth, requireRole('store_owner'), as
       if (allowedFields.includes(key)) updates[key] = req.body[key];
     });
 
+    // Accept a plain imageUrl string and convert to images array
+    if (req.body.imageUrl) {
+      updates.images = [{ url: req.body.imageUrl, alt: product.name }];
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(req.params.productId, updates, {
       new: true,
       runValidators: true

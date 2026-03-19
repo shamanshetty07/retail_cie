@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { API_BASE_URL } from '../config'
 import SearchResultsMap from '../components/SearchResultsMap'
@@ -30,6 +31,7 @@ function saveSearchCache(data) {
 }
 
 function SearchPage({ user }) {
+  const navigate = useNavigate()
   const cache = loadSearchCache()
   const [searchQuery, setSearchQuery] = useState(cache?.searchQuery ?? '')
   const [products, setProducts] = useState(cache?.products ?? [])
@@ -45,6 +47,49 @@ function SearchPage({ user }) {
   const [loadingReviewsFor, setLoadingReviewsFor] = useState(null)
   const [submittingReviewFor, setSubmittingReviewFor] = useState(null)
   const [targetPrices, setTargetPrices] = useState({})
+  const [isDefaultView, setIsDefaultView] = useState(!cache?.searchQuery)
+
+  const vantaRef = useRef(null)
+  const vantaEffect = useRef(null)
+
+  useEffect(() => {
+    if (user) return // skip Vanta if logged in
+    const tryInit = () => {
+      if (window.VANTA && window.THREE && vantaRef.current && !vantaEffect.current) {
+        vantaEffect.current = window.VANTA.BIRDS({
+          el: vantaRef.current,
+          THREE: window.THREE,
+          mouseControls: true,
+          touchControls: true,
+          gyroControls: false,
+          minHeight: 200,
+          minWidth: 200,
+          scale: 1.0,
+          scaleMobile: 1.0,
+          backgroundColor: 0x0d0d1a,
+          color1: 0x6c63ff,
+          color2: 0x00d4ff,
+          colorMode: 'variance',
+          birdSize: 1.2,
+          wingSpan: 28,
+          speedLimit: 5,
+          separation: 60,
+          alignment: 40,
+          cohesion: 30,
+          quantity: 4
+        })
+      } else if (!window.VANTA) {
+        setTimeout(tryInit, 100) // retry until scripts load
+      }
+    }
+    tryInit()
+    return () => {
+      if (vantaEffect.current) {
+        vantaEffect.current.destroy()
+        vantaEffect.current = null
+      }
+    }
+  }, [user])
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -59,6 +104,24 @@ function SearchPage({ user }) {
       )
     }
   }, [])
+
+  // Auto-load all products on first visit when there's no cached search
+  useEffect(() => {
+    if (cache?.searchQuery) return // already have cached results
+    const fetchAll = async () => {
+      setLoading(true)
+      try {
+        const response = await axios.get(`${API_BASE_URL}/products`)
+        setProducts(response.data.products || [])
+        setIsDefaultView(true)
+      } catch (error) {
+        console.error('Default products fetch error:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAll()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const directionsUrl = (lat, lng) => {
     const destination = `${lat},${lng}`
@@ -109,6 +172,7 @@ function SearchPage({ user }) {
 
     setLoading(true)
     setHighlightedStoreKey(null)
+    setIsDefaultView(false)
     try {
       const params = { q: searchQuery, radius }
       if (useLocation && userLocation.lat && userLocation.lng) {
@@ -243,6 +307,151 @@ function SearchPage({ user }) {
     }
   }
 
+  if (!user) {
+    return (
+      <div
+        ref={vantaRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 0,
+          overflow: 'hidden'
+        }}
+      >
+        {/* Gradient overlay for readability */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at center, rgba(13,13,26,0.45) 0%, rgba(13,13,26,0.75) 100%)',
+          zIndex: 1
+        }} />
+
+        {/* Centered content card */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          textAlign: 'center',
+          padding: '3rem 2.5rem',
+          borderRadius: '24px',
+          background: 'rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+          maxWidth: '480px',
+          width: '90%',
+          animation: 'vantaFadeIn 0.8s ease forwards'
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'rgba(108,99,255,0.2)',
+            border: '1px solid rgba(108,99,255,0.4)',
+            borderRadius: '100px',
+            padding: '0.35rem 1rem',
+            marginBottom: '1.5rem',
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            color: '#a29dff',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase'
+          }}>
+            <span>✦</span> Discover nearby deals
+          </div>
+
+          <h1 style={{
+            fontFamily: 'Outfit, sans-serif',
+            fontSize: 'clamp(1.8rem, 5vw, 2.6rem)',
+            fontWeight: 800,
+            color: '#fff',
+            lineHeight: 1.15,
+            marginBottom: '1rem',
+            letterSpacing: '-0.02em'
+          }}>
+            Find the best prices<br />
+            <span style={{
+              background: 'linear-gradient(135deg, #6c63ff, #00d4ff)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>near you</span>
+          </h1>
+
+          <p style={{
+            color: 'rgba(255,255,255,0.65)',
+            fontSize: '1rem',
+            lineHeight: 1.6,
+            marginBottom: '2rem'
+          }}>
+            Compare real‑time prices across local stores,
+            set price alerts, and head straight to the best deal.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+            <button
+              onClick={() => navigate('/register')}
+              style={{
+                display: 'inline-block',
+                padding: '0.9rem 2.5rem',
+                borderRadius: '100px',
+                background: 'linear-gradient(135deg, #6c63ff 0%, #00d4ff 100%)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '1.05rem',
+                fontFamily: 'Outfit, sans-serif',
+                border: 'none',
+                cursor: 'pointer',
+                letterSpacing: '0.01em',
+                boxShadow: '0 8px 28px rgba(108,99,255,0.45)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                width: '100%',
+                maxWidth: '280px'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 12px 36px rgba(108,99,255,0.6)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 8px 28px rgba(108,99,255,0.45)'
+              }}
+            >
+              Get Started — Register
+            </button>
+
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.55)',
+                fontSize: '0.9rem',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.55)' }}
+            >
+              Already have an account? Log in →
+            </button>
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes vantaFadeIn {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
   return (
     <div className="search-page customer-home">
       <section className="customer-hero card-gradient">
@@ -352,9 +561,12 @@ function SearchPage({ user }) {
         <section className="results-hub">
           <div className="results-header">
             <div>
-              <span className="section-kicker">Results</span>
-              <h2>{searchQuery} near you</h2>
-              <p>{flattenedStores.length} offers across {uniqueStoreCount} stores within {radius} km.</p>
+              <span className="section-kicker">{isDefaultView ? 'Browse' : 'Results'}</span>
+              <h2>{isDefaultView ? 'All available products' : `${searchQuery} near you`}</h2>
+              <p>{isDefaultView
+                ? `${flattenedStores.length} price listings across ${uniqueStoreCount} stores`
+                : `${flattenedStores.length} offers across ${uniqueStoreCount} stores within ${radius} km.`}
+              </p>
             </div>
 
             <div className="results-summary-cards">

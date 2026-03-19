@@ -7,6 +7,44 @@ const { getDistance } = require('../utils/distance');
 
 const router = express.Router();
 
+// Get all products (default browse, no auth required)
+router.get('/', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 30, 100);
+    const products = await Product.find({ isActive: true })
+      .populate('store', 'name location address')
+      .limit(limit * 5);
+
+    const grouped = {};
+    products.forEach((product) => {
+      const key = product.name.toLowerCase();
+      if (!grouped[key]) {
+        grouped[key] = {
+          id: product._id,
+          name: product.name,
+          imageUrl: product.images?.[0]?.url || '',
+          stores: []
+        };
+      }
+      grouped[key].stores.push({
+        store: product.store,
+        price: product.price,
+        distance: null
+      });
+    });
+
+    Object.values(grouped).forEach((item) => {
+      item.stores.sort((a, b) => a.price - b.price);
+    });
+
+    const results = Object.values(grouped).slice(0, limit);
+    res.json({ products: results });
+  } catch (error) {
+    console.error('Products list error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Search products
 router.get('/search', [
   query('q').trim().isLength({ min: 1 }).withMessage('Search query required'),
