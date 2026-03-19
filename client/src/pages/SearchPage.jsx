@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { Fragment, useMemo, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { API_BASE_URL } from '../config'
@@ -714,14 +714,21 @@ function SearchPage({ user }) {
                               {user ? (
                                 <div className="review-form-box">
                                   <label className="review-label">Your rating</label>
-                                  <select
-                                    value={draft.rating}
-                                    onChange={(e) => setReviewDraft(product.id, { rating: Number(e.target.value) })}
-                                  >
+                                  <div className="rating">
                                     {[5, 4, 3, 2, 1].map((star) => (
-                                      <option key={star} value={star}>{star} stars</option>
+                                      <Fragment key={star}>
+                                        <input
+                                          value={star}
+                                          name={`rating-${product.id}`}
+                                          id={`star${star}-${product.id}`}
+                                          type="radio"
+                                          checked={draft.rating === star}
+                                          onChange={() => setReviewDraft(product.id, { rating: star })}
+                                        />
+                                        <label htmlFor={`star${star}-${product.id}`}></label>
+                                      </Fragment>
                                     ))}
-                                  </select>
+                                  </div>
                                   <textarea
                                     placeholder="Share a quick opinion about this product"
                                     value={draft.comment}

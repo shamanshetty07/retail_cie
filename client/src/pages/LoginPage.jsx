@@ -53,6 +53,14 @@ function LoginPage({ setUser }) {
             <li>Seller dashboard for store owners</li>
             <li>Live watchlist and price-drop tracking</li>
           </ul>
+
+          <div className="loadingspinner" style={{ marginTop: '2rem' }}>
+            <div id="square1"></div>
+            <div id="square2"></div>
+            <div id="square3"></div>
+            <div id="square4"></div>
+            <div id="square5"></div>
+          </div>
         </section>
 
         <section className="auth-container auth-card">
