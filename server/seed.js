@@ -31,7 +31,7 @@ const seedDatabase = async () => {
       email: 'owner@traderjoes.com',
       password: 'password123',
       role: 'store_owner',
-      profile: { firstName: 'Jane', lastName: 'Doe' }
+      profile: { firstName: 'Rock', lastName: 'Doe' }
     });
 
     const owner3 = await User.create({
