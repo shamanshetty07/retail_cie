@@ -24,6 +24,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/stores', require('./routes/stores'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/watchlist', require('./routes/watchlists'));
+app.use('/api/orders', require('./routes/orders'));
 
 const userSockets = new Map();
 

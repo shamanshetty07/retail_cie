@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
-import { API_BASE_URL } from '../config'
+import { API_BASE_URL, SOCKET_URL } from '../config'
+import { io } from 'socket.io-client'
 import MapPicker from '../components/MapPicker'
 
 function DashboardPage({ user }) {
@@ -29,9 +30,27 @@ function DashboardPage({ user }) {
   const [updatingProductId, setUpdatingProductId] = useState(null)
   const [imageInputFor, setImageInputFor] = useState(null)   // productId with open image input
   const [imageUrlDraft, setImageUrlDraft] = useState('')
+  const [orders, setOrders] = useState([])
+  const [newOrderNotifications, setNewOrderNotifications] = useState([])
 
   useEffect(() => {
     fetchStores()
+    fetchOrders()
+
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    const newSocket = io(SOCKET_URL)
+    newSocket.on('connect', () => {
+      newSocket.emit('authenticate', token)
+    })
+
+    newSocket.on('orderPlaced', (orderData) => {
+      setNewOrderNotifications((prev) => [orderData, ...prev])
+      setOrders((prev) => [orderData, ...prev])
+    })
+
+    return () => newSocket.close()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -63,6 +82,17 @@ function DashboardPage({ user }) {
       setError(getApiError(error, 'Failed to fetch stores'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/orders/seller`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      })
+      setOrders(response.data.orders || [])
+    } catch (error) {
+      console.error('Failed to fetch orders', error)
     }
   }
 
@@ -245,6 +275,26 @@ function DashboardPage({ user }) {
           <p>Sum of visible product prices</p>
         </div>
       </section>
+
+      {newOrderNotifications.length > 0 && (
+        <section className="seller-notifications card-surface" style={{ marginBottom: '2rem', border: '1px solid var(--accent-blue)' }}>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--accent-blue)' }}>🔔 New Orders!</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {newOrderNotifications.map((notif, idx) => (
+              <div key={idx} style={{ padding: '0.8rem', background: 'rgba(0,212,255,0.05)', borderRadius: '8px', borderLeft: '4px solid var(--accent-blue)' }}>
+                <strong>{notif.buyerName || 'A customer'}</strong> just placed an order for <strong>{notif.product?.name || notif.productName}</strong>.
+                <span style={{ float: 'right', fontWeight: 'bold' }}>₹{notif.price?.toFixed(2)}</span>
+                <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  Expected arrival: <strong style={{ color: '#fbbf24' }}>~{notif.estimatedArrivalMins || 15} mins</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="secondary-inline-btn" style={{ marginTop: '1rem' }} onClick={() => setNewOrderNotifications([])}>
+            Dismiss Alerts
+          </button>
+        </section>
+      )}
 
       <div className="dashboard-grid">
         <aside className="seller-sidebar card-surface-dark">
@@ -496,6 +546,37 @@ function DashboardPage({ user }) {
               })
             )}
           </div>
+          
+          <div className="panel-header seller-main-header" style={{ marginTop: '3rem' }}>
+            <div>
+              <span className="section-kicker">History</span>
+              <h2>Recent Orders</h2>
+              <p>Purchases directly affecting your inventory.</p>
+            </div>
+          </div>
+          <div className="orders-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {orders.length === 0 ? (
+              <div className="seller-empty">No orders placed yet.</div>
+            ) : (
+              orders.map((order) => (
+                <div key={order._id} style={{ padding: '1rem', borderRadius: '12px', background: 'var(--surface-dark)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <strong>{order.product?.name || order.productName || 'Unknown Product'}</strong>
+                    <strong style={{ color: 'var(--accent-blue)' }}>₹{(order.price || 0).toFixed(2)}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    <span>Buyer: {order.buyer?.username || order.buyerName || 'Anonymous'}</span>
+                    <span>{new Date(order.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div style={{ marginTop: '0.3rem', fontSize: '0.85rem' }}>
+                    <span className="store-category-pill">{order.store?.name || 'Your store'}</span>
+                    {order.estimatedArrivalMins && <span style={{ marginLeft: '1rem', color: '#fbbf24', fontWeight: 600 }}>Arrival in ~{order.estimatedArrivalMins} mins</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
         </section>
       </div>
     </div>

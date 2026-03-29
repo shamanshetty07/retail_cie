@@ -48,7 +48,11 @@ function SearchPage({ user }) {
   const [reviewDrafts, setReviewDrafts] = useState({})
   const [loadingReviewsFor, setLoadingReviewsFor] = useState(null)
   const [submittingReviewFor, setSubmittingReviewFor] = useState(null)
+  const [placingOrderId, setPlacingOrderId] = useState(null)
   const [isDefaultView, setIsDefaultView] = useState(!cache?.searchQuery)
+  const [orderModal, setOrderModal] = useState(null) // { product, store, price, distance }
+  const [arrivalMinutes, setArrivalMinutes] = useState('')
+  const [useCustomArrival, setUseCustomArrival] = useState(false)
 
   const vantaRef = useRef(null)
   const vantaEffect = useRef(null)
@@ -306,6 +310,39 @@ function SearchPage({ user }) {
       alert(message)
     } finally {
       setSubmittingReviewFor(null)
+    }
+  }
+
+  const openOrderModal = (productId, productName, storeId, storeName, price, distance) => {
+    if (!user) {
+      alert('Please log in first to place an order.')
+      return
+    }
+    const estimated = distance ? Math.ceil(distance * 4) + 5 : 15
+    setArrivalMinutes(String(estimated))
+    setUseCustomArrival(false)
+    setOrderModal({ productId, productName, storeId, storeName, price, distance, estimated })
+  }
+
+  const handleBuy = async () => {
+    if (!orderModal) return
+    const { productId, storeId, price, storeName, distance } = orderModal
+    const finalArrivalMins = parseInt(arrivalMinutes, 10) || orderModal.estimated
+    setPlacingOrderId(`${productId}-${storeId}`)
+    try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      await axios.post(
+        `${API_BASE_URL}/orders`,
+        { productId, storeId, price, distance, estimatedArrivalMins: finalArrivalMins },
+        { headers }
+      )
+      setOrderModal(null)
+      alert(`✅ Order placed at ${storeName}! The seller has been notified. You'll arrive in ~${finalArrivalMins} mins.`)
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to place order.'
+      alert(message)
+    } finally {
+      setPlacingOrderId(null)
     }
   }
 
@@ -670,6 +707,16 @@ function SearchPage({ user }) {
                                   Get directions
                                 </a>
                               ) : null}
+                              <button
+                                className="btn"
+                                style={{ padding: '0.4rem', fontSize: '0.85rem', width: '100%', marginTop: '0.5rem', background: 'var(--primary-purple)' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openOrderModal(product.id, product.name, entry.store?._id, entry.store?.name, entry.price, entry.distance);
+                                }}
+                              >
+                                🛒 Place Order
+                              </button>
                             </div>
                           )
                         })}
@@ -781,6 +828,105 @@ function SearchPage({ user }) {
           <h3>No results for “{searchQuery}”</h3>
           <p>Try a broader radius or a more generic product term to surface nearby inventory.</p>
         </section>
+      )}
+      {orderModal && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}
+          onClick={() => setOrderModal(null)}
+        >
+          <div
+            style={{
+              background: '#1a1a2e', border: '1px solid rgba(108,99,255,0.4)',
+              borderRadius: '20px', padding: '2rem', width: '90%', maxWidth: '440px',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.6)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif', color: '#ffffff', fontSize: '1.5rem' }}>🛒 Confirm Order</h2>
+            <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+              Ordering <strong style={{ color: '#fff' }}>{orderModal.productName}</strong> from{' '}
+              <strong style={{ color: '#6c63ff' }}>{orderModal.storeName}</strong>.
+            </p>
+            <div style={{ background: 'rgba(108,99,255,0.15)', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', color: '#ffffff' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ color: 'rgba(255,255,255,0.7)' }}>Price</span>
+                <strong style={{ color: '#ffffff' }}>₹{Number(orderModal.price).toFixed(2)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(255,255,255,0.7)' }}>Distance</span>
+                <strong style={{ color: '#ffffff' }}>{orderModal.distance ? `${orderModal.distance.toFixed(1)} km` : 'N/A'}</strong>
+              </div>
+            </div>
+            <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.95rem', color: '#ffffff' }}>
+              ⏱ When will you arrive?
+            </label>
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+              <button
+                type="button"
+                style={{
+                  flex: 1, padding: '0.65rem', borderRadius: '10px', fontWeight: 600, fontSize: '0.88rem',
+                  border: !useCustomArrival ? '2px solid #6c63ff' : '2px solid rgba(255,255,255,0.2)',
+                  background: !useCustomArrival ? 'rgba(108,99,255,0.35)' : 'rgba(255,255,255,0.07)',
+                  color: '#ffffff', cursor: 'pointer'
+                }}
+                onClick={() => { setUseCustomArrival(false); setArrivalMinutes(String(orderModal.estimated)) }}
+              >
+                Auto ~{orderModal.estimated} mins
+              </button>
+              <button
+                type="button"
+                style={{
+                  flex: 1, padding: '0.65rem', borderRadius: '10px', fontWeight: 600, fontSize: '0.88rem',
+                  border: useCustomArrival ? '2px solid #6c63ff' : '2px solid rgba(255,255,255,0.2)',
+                  background: useCustomArrival ? 'rgba(108,99,255,0.35)' : 'rgba(255,255,255,0.07)',
+                  color: '#ffffff', cursor: 'pointer'
+                }}
+                onClick={() => { setUseCustomArrival(true); setArrivalMinutes('') }}
+              >
+                Custom Time
+              </button>
+            </div>
+            {useCustomArrival && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <input
+                  type="number" min="1" max="240" placeholder="e.g. 20"
+                  value={arrivalMinutes}
+                  onChange={(e) => setArrivalMinutes(e.target.value)}
+                  style={{
+                    flex: 1, padding: '0.65rem 1rem', borderRadius: '10px',
+                    border: '1px solid rgba(108,99,255,0.4)',
+                    background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '1rem'
+                  }}
+                  autoFocus
+                />
+                <span style={{ color: 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap' }}>minutes</span>
+              </div>
+            )}
+            <button
+              className="btn"
+              style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', marginBottom: '0.75rem', background: 'linear-gradient(135deg, #6c63ff, #00d4ff)', border: 'none' }}
+              onClick={handleBuy}
+              disabled={!!placingOrderId}
+            >
+              {placingOrderId ? 'Placing Order...' : '✅ Confirm & Notify Seller'}
+            </button>
+            <button
+              type="button"
+              style={{
+                width: '100%', padding: '0.7rem', fontSize: '0.9rem',
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '10px', cursor: 'pointer', color: '#ffffff', fontWeight: 600
+              }}
+              onClick={() => setOrderModal(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
